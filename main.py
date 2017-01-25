@@ -1,110 +1,84 @@
 import autograd.numpy as np
 from autograd import grad
-import struct
-import random
+import os
+os.chdir('C:\\Users\\jmpark8187\\Documents\\Python Scripts\\feedforward neural network')
+import read_mnist_data as rd
 
+train_images = rd.parse_images('data/train-images-idx3-ubyte.gz')
+train_labels = rd.parse_labels('data/train-labels-idx1-ubyte.gz')
+test_images = rd.parse_images('data/t10k-images-idx3-ubyte.gz')
+test_labels = rd.parse_labels('data/t10k-labels-idx1-ubyte.gz')
 
-def log_softmax(x):
-    """ compute softmax """
-    z = x-x.max(1, keepdims=True)
-    return (z - np.log(np.sum(np.exp(z), axis=1, keepdims=True)))
-
-
-def crossEntropy(weights):
-    """ compute cross entropy between prediction and target """
-    return -sum(sum(batch_y * log_softmax(np.dot(batch_x, weights))))
-
-
-# open file
-f_train_image = open('train-images.idx3-ubyte', 'rb')
-f_train_label = open('train-labels.idx1-ubyte', 'rb')
-f_test_image = open('t10k-images.idx3-ubyte', 'rb')
-f_test_label = open('t10k-labels.idx1-ubyte', 'rb')
-
-# data
-train_images = []
-train_labels = []
-test_images = []
-test_labels = []
-
-# temporary vector to read file
-tmp_image = []
-tmp_label = []
-
-# read first redundant bytes
-f_train_image.read(16)
-f_train_label.read(8)
-f_test_image.read(16)
-f_test_label.read(8)
-
-# read training data
-while True:
-    tmp_image = f_train_image.read(784)
-    tmp_label = f_train_label.read(1)
-    if not tmp_image:
-        break
-    if not tmp_label:
-        break
-    train_images.append(struct.unpack(len(tmp_image)*'B', tmp_image))
-    train_labels.append(int(tmp_label[0]))
-
-train_images = np.divide(train_images, 255)
-print("training read done")
-
-# read test data
-while True:
-    tmp_image = f_test_image.read(784)
-    tmp_label = f_test_label.read(1)
-    if not tmp_image:
-        break
-    if not tmp_label:
-        break
-    test_images.append(struct.unpack(len(tmp_image)*'B', tmp_image))
-    test_labels.append(int(tmp_label[0]))
-
-test_images = np.divide(test_images, 255)
-print("test read done")
-
-# add bias term
+train_images = train_images / 255.0
+test_images = test_images / 255.0
 train_images = np.append(train_images, np.ones((len(train_images), 1)), axis=1)
 test_images = np.append(test_images, np.ones((len(test_images), 1)), axis=1)
+W = np.random.rand(785, 10)
+train_images = train_images[0:100, :]
+train_labels = train_labels[0:100]
+alpha = 0.8
+print("Alpha:", (alpha))
 
-# transform training labels to one-hot matrix
-Train_labels = []
-for i in train_labels:
-    a = np.zeros(10)
-    a[i] = 1
-    Train_labels.append(a)
+np.random.seed(1)
 
-Train_labels = np.array(Train_labels)
+# (784 - 256 - 64 - 10)
+W0 = (2*np.random.random((785, 256)) - 1)
+W1 = (2*np.random.random((256, 64)) - 1)
+W2 = (2*np.random.random((64, 10)) - 1)
 
-# batch
-batch_x = np.empty((0, 785))
-batch_y = np.empty((0, 10))
-for i in range(100):
-    r = random.randint(1, train_images.shape[0]-1)
-    batch_x = np.append(batch_x, [train_images[r]], axis=0)
-    batch_y = np.append(batch_y, [Train_labels[r]], axis=0)
 
-# Learning
-weights = np.ones((785, 10))
-print("before gradient descent: ", crossEntropy(weights))
-grad_crossEntropy = grad(crossEntropy)
+layer_0 = np.zeros((1, 785))
+layer_1 = np.zeros((1, 256))
+layer_2 = np.zeros((1, 64))
+layer_3 = np.zeros((1, 10))
 
-for i in range(500):
-    weights -= 0.01 * grad_crossEntropy(weights)
 
-print("after gradient descent: ", crossEntropy(weights))
+def sigmoid(x):
+    output = 1/(1+np.exp(-x))
+    return output
 
-# evaluate
-predict = []
-correct_ans = 0
-for i in range(len(test_labels)):
-    predict.append(np.argmax(np.dot(test_images[i], weights)))
 
-for i in predict:
-    if predict[i] == test_labels[i]:
-        correct_ans += 1
+def sigmoid_output_to_derivative(output):
+    return output*(1-output)
 
-correct_ans = correct_ans/len(predict) * 100
-print("accuracy", correct_ans, "%")
+
+def ANN(W0, W1, W2, layer_0):
+    layer_1 = sigmoid(np.dot(layer_0, W0))
+    layer_2 = sigmoid(np.dot(layer_1, W1))
+    layer_3 = sigmoid(np.dot(layer_2, W2))
+    return layer_3
+
+
+times = 20  # 반복횟수
+print("do neural")
+
+for j in range(times):
+    for i in range(len(train_images)):
+        layer_0[0] = train_images[i]
+        layer_1 = sigmoid(np.dot(layer_0, W0))
+        layer_2 = sigmoid(np.dot(layer_1, W1))
+        layer_3 = sigmoid(np.dot(layer_2, W2))
+        r = np.zeros(10)       # 정답이 입력되는 부분을 0으로 초기화
+        r[train_labels[i]] = 1.0        # 정답에 해당하는 위치를 1로 설정
+        layer_3_error = layer_3 - r
+        # print("err:",layer_3_error)
+        layer_3_delta = layer_3_error*sigmoid_output_to_derivative(layer_3)
+        layer_2_error = layer_3_delta.dot(W2.T)
+        layer_2_delta = layer_2_error * sigmoid_output_to_derivative(layer_2)
+        layer_1_error = layer_2_delta.dot(W1.T)
+        layer_1_delta = layer_1_error * sigmoid_output_to_derivative(layer_1)
+        # layer_3_error = layer_3 - train_labels
+        W2 -= alpha * np.reshape(layer_2, (-1, 1))*layer_3_delta
+        W1 -= alpha * np.reshape(layer_1, (-1, 1))*layer_2_delta
+        W0 -= alpha * np.reshape(layer_0, (-1, 1))*layer_1_delta
+        """
+        #layer_3_error = train_labels - layer_3
+        W2 += alpha * (layer_2.T.dot(layer_3_delta))
+        W1 += alpha * (layer_1.T.dot(layer_2_delta))
+        W0 += alpha * (layer_0.T.dot(layer_1_delta))
+        """
+    # 1개의 입력이 끝난후 마지막 입력에 대한 에러확인
+    print((j), " iterations:")
+    print("Error last input :", str(np.mean(np.abs(layer_3_error))))
+    # print("out:",layer_3)
+    # print("ans:",r)
