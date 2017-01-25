@@ -27,9 +27,9 @@ def log_softmax(x):
 
 
 def cross_entropy(W0, W1, W2):
-    ran = 200 * (np.random.random_integers(1, 300) - 1)
-    batch_x = train_images[ran + np.arange(200)]
-    batch_y = train_labels[ran + np.arange(200)]
+    ran = 500 * (np.random.random_integers(1, 120) - 1)
+    batch_x = train_images[ran + np.arange(120)]
+    batch_y = train_labels[ran + np.arange(120)]
     layer1 = np.dot(batch_x, W0)
     layer2 = np.dot(ReLU(layer1), W1)
     layer3 = np.dot(ReLU(layer2), W2)
@@ -40,16 +40,26 @@ grad_W0 = grad(cross_entropy, argnum=0)
 grad_W1 = grad(cross_entropy, argnum=1)
 grad_W2 = grad(cross_entropy, argnum=2)
 
-W0 = (2*np.random.random((785, 256)) - 1)
-W1 = (2*np.random.random((256, 64)) - 1)
-W2 = (2*np.random.random((64, 10)) - 1)
+W0 = (2*np.random.random((785, 512)) - 1)
+W1 = (2*np.random.random((512, 512)) - 1)
+W2 = (2*np.random.random((512, 10)) - 1)
 
-for i in range(200):
+for i in range(1000):
+    W0_ = W0 - 0
+    W1_ = W1 - 0
+    for j in range(400):
+        ran = random.randint(0, 511)
+        W0_[:, ran] = 0
+
+    for k in range(400):
+        ran = random.randint(0, 511)
+        W1_[:, ran] = 0
     W0 -= grad_W0(W0, W1, W2) * 0.01
     W1 -= grad_W1(W0, W1, W2) * 0.01
     W2 -= grad_W2(W0, W1, W2) * 0.01
+    cost = cross_entropy(W0, W1, W2)
     if i % 10 == 0:
-        print('cost: ', cross_entropy(W0, W1, W2))
+        print('cost: ', cost)
 
 
 # evaluate
