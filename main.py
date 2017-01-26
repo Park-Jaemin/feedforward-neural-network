@@ -28,13 +28,14 @@ def log_softmax(x):
 
 def cross_entropy(W0, W1, W2):
     # cost function, batch size: 600
-    ran = 600 * (np.random.random_integers(1, 100) - 1)
-    batch_x = train_images[ran + np.arange(600)]
-    batch_y = train_labels[ran + np.arange(600)]
+    ran = 200 * (np.random.random_integers(1, 300) - 1)
+    batch_x = train_images[ran + np.arange(200)]
+    batch_y = train_labels[ran + np.arange(200)]
     layer1 = np.dot(batch_x, W0)
     layer2 = np.dot(ReLU(layer1), W1)
     layer3 = np.dot(ReLU(layer2), W2)
-    return np.mean(-np.sum(batch_y * log_softmax(layer3), axis=1))
+    L1norm = 0.1 * np.mean(abs(W0)) + np.mean(abs(W1)) + np.mean(abs(W2))
+    return np.mean(-np.sum(batch_y * log_softmax(layer3), axis=1)) + L1norm
 
 
 # gradient function
@@ -46,19 +47,36 @@ grad_W2 = grad(cross_entropy, argnum=2)
 W0 = (2*np.random.random((785, 785)) - 1)
 W1 = (2*np.random.random((785, 785)) - 1)
 W2 = (2*np.random.random((785, 10)) - 1)
+cost_cur = 100000000
+cost_min = 100000000
+early_stop_cnt = 0
 
 # training
 for i in range(1000):
     W0_ = np.multiply(W0, np.random.binomial(n=1, p=0.8, size=(785, 1)))
     W1_ = np.multiply(W1, np.random.binomial(n=1, p=0.5, size=(785, 1)))
     W2_ = np.multiply(W2, np.random.binomial(n=1, p=0.5, size=(785, 1)))
-
     W0 -= grad_W0(W0_, W1_, W2_) * 0.01
     W1 -= grad_W1(W0_, W1_, W2_) * 0.01
     W2 -= grad_W2(W0_, W1_, W2_) * 0.01
+    cost_cur = cross_entropy(W0, W1, W2)
+    if cost_cur < cost_min:
+        cost_min = cost_cur
+        W0_min = W0 + 0
+        W1_min = W1 + 0
+        W2_min = W2 + 0
+        early_stop_cnt = 0
+        continue
+    if early_stop_cnt > 10:
+        print('early stop!')
+        break
     if i % 10 == 0:
-        print('cost: ', cross_entropy(W0, W1, W2))
+        print('cost: ', cost_cur)
 
+
+W0 = W0_min
+W1 = W1_min
+W2 = W2_min
 
 # evaluate
 predict = []
@@ -74,4 +92,5 @@ for i in predict:
         correct_ans += 1
 
 correct_ans = correct_ans/len(predict) * 100
+# print('using L1norm')
 print("accuracy", correct_ans, "%")
