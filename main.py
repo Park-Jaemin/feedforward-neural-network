@@ -34,8 +34,7 @@ def cross_entropy(W0, W1, W2):
     layer1 = np.dot(batch_x, W0)
     layer2 = np.dot(ReLU(layer1), W1)
     layer3 = np.dot(ReLU(layer2), W2)
-    L1norm = 0.1 * np.mean(abs(W0)) + np.mean(abs(W1)) + np.mean(abs(W2))
-    return np.mean(-np.sum(batch_y * log_softmax(layer3), axis=1)) + L1norm
+    return np.mean(-np.sum(batch_y * log_softmax(layer3), axis=1))
 
 
 # gradient function
