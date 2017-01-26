@@ -67,7 +67,9 @@ for i in range(1000):
         W2_min = W2 + 0
         early_stop_cnt = 0
         continue
-    if early_stop_cnt > 10:
+    else:
+        early_stop_cnt += 1
+    if early_stop_cnt > 100:
         print('early stop!')
         break
     if i % 10 == 0:
