@@ -4,13 +4,13 @@ import array
 import autograd.numpy as np
 
 
-def parse_labels(filename):
+def read_labels(filename):
     with gzip.open(filename, 'rb') as fh:
         magic, num_data = struct.unpack(">II", fh.read(8))
         return np.array(array.array("B", fh.read()), dtype=np.uint8)
 
 
-def parse_images(filename):
+def read_images(filename):
     with gzip.open(filename, 'rb') as fh:
         magic, num_data, rows, cols = struct.unpack(">IIII", fh.read(16))
         x = np.array(array.array("B", fh.read()), dtype=np.uint8).reshape(num_data, rows * cols)
