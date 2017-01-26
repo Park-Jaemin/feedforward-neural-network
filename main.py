@@ -31,9 +31,9 @@ def cross_entropy(W0, W1, W2):
     ran = 200 * (np.random.random_integers(1, 300) - 1)
     batch_x = train_images[ran + np.arange(200)]
     batch_y = train_labels[ran + np.arange(200)]
-    layer1 = np.dot(batch_x, W0)
+    layer1 = np.dot(ReLU(batch_x), W0)
     layer2 = np.dot(ReLU(layer1), W1)
-    layer3 = np.dot(ReLU(layer2), W2)
+    layer3 = np.dot((layer2), W2)
     return np.mean(-np.sum(batch_y * log_softmax(layer3), axis=1))
 
 
@@ -59,6 +59,7 @@ for i in range(1000):
     W1 -= grad_W1(W0_, W1_, W2_) * 0.01
     W2 -= grad_W2(W0_, W1_, W2_) * 0.01
     cost_cur = cross_entropy(W0, W1, W2)
+
     if cost_cur < cost_min:
         cost_min = cost_cur
         W0_min = W0 + 0
@@ -83,9 +84,9 @@ W2 = W2_min
 predict = []
 correct_ans = 0
 for i in range(len(test_labels)):
-    layer1 = np.dot(test_images[i], W0)
+    layer1 = np.dot(ReLU(test_images[i]), W0)
     layer2 = np.dot(ReLU(layer1), W1)
-    layer3 = np.dot(ReLU(layer2), W2)
+    layer3 = np.dot((layer2), W2)
     predict.append(np.argmax(layer3))
 
 for i in predict:
@@ -93,5 +94,4 @@ for i in predict:
         correct_ans += 1
 
 correct_ans = correct_ans/len(predict) * 100
-# print('using L1norm')
 print("accuracy", correct_ans, "%")
